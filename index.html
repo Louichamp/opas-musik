@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Musik Raten</title>
+    <style>
+        body {
+            background-color: #222;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        .container {
+            padding: 20px;
+        }
+        button {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            font-size: 24px;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
+            transition: transform 0.1s;
+        }
+        button:active { transform: scale(0.95); }
+        h1 { margin-bottom: 30px; font-weight: 300; }
+        p { color: #888; margin-top: 20px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1 id="statusText">Bitte QR-Code scannen...</h1>
+        
+        <audio id="audioPlayer" preload="auto" style="display:none;">
+            <source id="audioSource" src="" type="audio/mpeg">
+        </audio>
+
+        <button id="playBtn" onclick="playMusic()" style="display:none;">▶️ Abspielen</button>
+        
+        <p id="debugInfo"></p>
+    </div>
+
+    <script>
+        // 1. Nummer aus der URL holen (z.B. ?track=001)
+        const urlParams = new URLSearchParams(window.location.search);
+        const trackId = urlParams.get('track');
+        const statusText = document.getElementById('statusText');
+        const playBtn = document.getElementById('playBtn');
+        const debugInfo = document.getElementById('debugInfo');
+
+        if(trackId) {
+            // Wir bauen den Pfad: mp3/001.mp3
+            const mp3Path = "mp3/" + trackId + ".mp3";
+            
+            const player = document.getElementById('audioPlayer');
+            const source = document.getElementById('audioSource');
+            
+            source.src = mp3Path;
+            player.load();
+
+            statusText.innerText = "Lied bereit!";
+            playBtn.style.display = "inline-block";
+            debugInfo.innerText = "Datei: " + trackId + ".mp3";
+        } else {
+            statusText.innerText = "Fehler: Kein Lied ausgewählt.";
+        }
+
+        function playMusic() {
+            const player = document.getElementById('audioPlayer');
+            player.play()
+                .then(() => {
+                    statusText.innerText = "Lied läuft...";
+                    playBtn.style.display = "none"; // Button ausblenden damit man nur hört
+                })
+                .catch(error => {
+                    statusText.innerText = "Fehler beim Abspielen";
+                    alert("Konnte nicht abspielen. Bitte Seite neu laden.");
+                });
+        }
+    </script>
+
+</body>
+</html>
