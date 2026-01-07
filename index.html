@@ -3,92 +3,277 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Musik Raten</title>
+    <title>Opas Hitster Quiz</title>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
         body {
-            background-color: #222;
-            color: #fff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #1a1a1a;
+            color: white;
+            font-family: sans-serif;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            height: 100vh;
+            justify-content: center;
+            min-height: 100vh;
             margin: 0;
             text-align: center;
+            overflow: hidden; /* Kein Scrollen */
         }
-        .container {
+
+        /* --- SCREEN STYLES --- */
+        .screen {
+            display: none; /* Alle Screens erst mal ausblenden */
+            width: 100%;
+            max-width: 400px;
             padding: 20px;
+            box-sizing: border-box;
+            flex-direction: column;
+            align-items: center;
         }
-        button {
+        
+        /* Der aktive Screen wird sichtbar */
+        .screen.active {
+            display: flex;
+        }
+
+        h1 {
+            font-weight: 300;
+            margin-bottom: 40px;
+            line-height: 1.4;
+        }
+        
+        small {
+            color: #888;
+            font-size: 0.6em;
+            display: block;
+            margin-top: 5px;
+        }
+
+        /* --- BUTTONS --- */
+        .btn {
             background-color: #e74c3c;
             color: white;
             border: none;
-            padding: 20px 40px;
-            font-size: 24px;
+            padding: 20px 30px;
+            font-size: 20px;
             border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
-            transition: transform 0.1s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            margin: 10px;
+            width: 80%;
+            max-width: 300px;
         }
-        button:active { transform: scale(0.95); }
-        h1 { margin-bottom: 30px; font-weight: 300; }
-        p { color: #888; margin-top: 20px; font-size: 14px; }
+        
+        .btn-secondary {
+            background-color: #555;
+            font-size: 16px;
+            padding: 15px 25px;
+        }
+
+        /* --- VINYL SCHALLPLATTE --- */
+        .record-container {
+            width: 250px;
+            height: 250px;
+            background: linear-gradient(135deg, #111, #333);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 40px;
+            border: 2px solid #444;
+            /* Animation */
+            animation: spin 4s linear infinite;
+            animation-play-state: paused; /* Startet gestoppt */
+        }
+
+        /* Das Label in der Mitte der Platte */
+        .record-label {
+            width: 80px;
+            height: 80px;
+            background-color: #e74c3c;
+            border-radius: 50%;
+            border: 20px solid #222; /* Schwarzer Ring */
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        /* --- SCANNER --- */
+        #reader {
+            width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #555;
+        }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1 id="statusText">Bitte QR-Code scannen...</h1>
+    <div id="screen-start" class="screen active">
+        <h1>Opas Hitster Quiz<br><small>(Kirchenmusik Edition)</small></h1>
+        <button class="btn" onclick="startScanner()">📷 QR-Code scannen</button>
+    </div>
+
+    <div id="screen-scan" class="screen">
+        <h2>Bitte Code scannen</h2>
+        <div id="reader"></div>
+        <button class="btn btn-secondary" onclick="showScreen('screen-start'); stopScanner()">Abbrechen</button>
+    </div>
+
+    <div id="screen-player" class="screen">
+        <h1>Hör genau hin...</h1>
         
-        <audio id="audioPlayer" preload="auto" style="display:none;">
+        <div class="record-container" id="vinylRecord">
+            <div class="record-label"></div>
+        </div>
+
+        <audio id="audioPlayer">
             <source id="audioSource" src="" type="audio/mpeg">
         </audio>
 
-        <button id="playBtn" onclick="playMusic()" style="display:none;">▶️ Abspielen</button>
-        
-        <p id="debugInfo"></p>
+        <button id="playPauseBtn" class="btn" onclick="togglePlay()">▶️ Abspielen</button>
+        <button class="btn btn-secondary" onclick="resetGame()">🔄 Neuen Code scannen</button>
     </div>
 
     <script>
-        // 1. Nummer aus der URL holen (z.B. ?track=001)
-        const urlParams = new URLSearchParams(window.location.search);
-        const trackId = urlParams.get('track');
-        const statusText = document.getElementById('statusText');
-        const playBtn = document.getElementById('playBtn');
-        const debugInfo = document.getElementById('debugInfo');
+        let html5QrcodeScanner;
+        const audioPlayer = document.getElementById('audioPlayer');
+        const vinylRecord = document.getElementById('vinylRecord');
+        const playPauseBtn = document.getElementById('playPauseBtn');
 
-        if(trackId) {
-            // Wir bauen den Pfad: mp3/001.mp3
-            // Wir entfernen die Nullen vorne (aus "001" wird "1")
-            const mp3Path = "mp3/" + parseInt(trackId, 10) + ".mp3";
+        // --- HILFSFUNKTIONEN ---
 
+        // Wechselt zwischen den Ansichten (Start / Scan / Player)
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        // --- SCANNER LOGIK ---
+
+        function startScanner() {
+            showScreen('screen-scan');
             
-            const player = document.getElementById('audioPlayer');
+            html5QrcodeScanner = new Html5Qrcode("reader");
+            
+            // Kamera Einstellungen
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+            
+            // Startet die Kamera (bevorzugt die Rückkamera "environment")
+            html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess);
+        }
+
+        function stopScanner() {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.stop().catch(err => console.log(err));
+            }
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            // Scanner stoppen
+            stopScanner();
+            
+            // URL analysieren (wir suchen nach "track=...")
+            console.log("Gescannter Code:", decodedText);
+            
+            try {
+                // Wir tun so, als wäre der gescannte Text eine URL
+                let urlObj;
+                try {
+                    urlObj = new URL(decodedText);
+                } catch(e) {
+                    // Falls nur eine Nummer im QR Code steht (unwahrscheinlich bei dir)
+                    urlObj = new URL("https://dummy.com/?track=" + decodedText);
+                }
+
+                const params = new URLSearchParams(urlObj.search);
+                const trackId = params.get('track');
+
+                if (trackId) {
+                    loadSong(trackId);
+                } else {
+                    alert("Kein Lied im QR-Code gefunden!");
+                    showScreen('screen-start');
+                }
+
+            } catch (error) {
+                alert("Fehler beim Lesen des Codes.");
+                showScreen('screen-start');
+            }
+        }
+
+        // --- PLAYER LOGIK ---
+
+        function loadSong(trackId) {
+            // WICHTIG: Die Nullen entfernen (aus "002" wird "2")
+            const cleanId = parseInt(trackId, 10);
+            
+            // Pfad setzen
             const source = document.getElementById('audioSource');
+            source.src = "mp3/" + cleanId + ".mp3";
             
-            source.src = mp3Path;
-            player.load();
-
-            statusText.innerText = "Lied bereit!";
-            playBtn.style.display = "inline-block";
-            debugInfo.innerText = "Datei: " + trackId + ".mp3";
-        } else {
-            statusText.innerText = "Fehler: Kein Lied ausgewählt.";
+            audioPlayer.load();
+            
+            // Zum Player wechseln
+            showScreen('screen-player');
+            
+            // Automatisch starten (klappt bei manchen Handys, sonst Button drücken)
+            playMusic(); 
         }
 
         function playMusic() {
-            const player = document.getElementById('audioPlayer');
-            player.play()
-                .then(() => {
-                    statusText.innerText = "Lied läuft...";
-                    playBtn.style.display = "none"; // Button ausblenden damit man nur hört
-                })
-                .catch(error => {
-                    statusText.innerText = "Fehler beim Abspielen";
-                    alert("Konnte nicht abspielen. Bitte Seite neu laden.");
-                });
+            audioPlayer.play().then(() => {
+                isPlaying = true;
+                updatePlayerUI();
+            }).catch(e => {
+                // Autoplay wurde blockiert, Nutzer muss klicken
+                isPlaying = false;
+                updatePlayerUI();
+            });
         }
-    </script>
 
+        function togglePlay() {
+            if (audioPlayer.paused) {
+                audioPlayer.play();
+            } else {
+                audioPlayer.pause();
+            }
+            updatePlayerUI();
+        }
+
+        // UI Aktualisieren (Platte drehen & Button Text)
+        audioPlayer.onplay = updatePlayerUI;
+        audioPlayer.onpause = updatePlayerUI;
+        audioPlayer.onended = () => { vinylRecord.style.animationPlayState = 'paused'; playPauseBtn.innerText = "▶️ Noch mal"; };
+
+        function updatePlayerUI() {
+            if (!audioPlayer.paused) {
+                // Musik läuft
+                vinylRecord.style.animationPlayState = 'running';
+                playPauseBtn.innerText = "⏸ Pause";
+            } else {
+                // Musik pausiert
+                vinylRecord.style.animationPlayState = 'paused';
+                playPauseBtn.innerText = "▶️ Weiter";
+            }
+        }
+
+        function resetGame() {
+            audioPlayer.pause();
+            audioPlayer.currentTime = 0;
+            showScreen('screen-start');
+        }
+
+        // --- DIREKTAUFRUF (FALLS JEMAND MIT NORMALER KAMERA SCANNT) ---
+        // Falls die Seite schon mit ?track=... geladen wurde, direkt abspielen
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlTrackId = urlParams.get('track');
+        if(urlTrackId) {
+            loadSong(urlTrackId);
+        }
+
+    </script>
 </body>
 </html>
