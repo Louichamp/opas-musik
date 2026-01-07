@@ -59,7 +59,9 @@
 
         if(trackId) {
             // Wir bauen den Pfad: mp3/001.mp3
-            const mp3Path = "mp3/" + trackId + ".mp3";
+            // Wir entfernen die Nullen vorne (aus "001" wird "1")
+            const mp3Path = "mp3/" + parseInt(trackId, 10) + ".mp3";
+
             
             const player = document.getElementById('audioPlayer');
             const source = document.getElementById('audioSource');
