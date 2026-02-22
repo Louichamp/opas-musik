@@ -19,7 +19,6 @@
             text-align: center;
             overflow: hidden; /* Kein Scrollen */
         }
-
         /* --- SCREEN STYLES --- */
         .screen {
             display: none; /* Alle Screens erst mal ausblenden */
@@ -35,7 +34,6 @@
         .screen.active {
             display: flex;
         }
-
         h1 {
             font-weight: 300;
             margin-bottom: 40px;
@@ -48,7 +46,6 @@
             display: block;
             margin-top: 5px;
         }
-
         /* --- BUTTONS --- */
         .btn {
             background-color: #e74c3c;
@@ -69,7 +66,6 @@
             font-size: 16px;
             padding: 15px 25px;
         }
-
         /* --- VINYL SCHALLPLATTE --- */
         .record-container {
             width: 250px;
@@ -86,7 +82,6 @@
             animation: spin 4s linear infinite;
             animation-play-state: paused; /* Startet gestoppt */
         }
-
         /* Das Label in der Mitte der Platte */
         .record-label {
             width: 80px;
@@ -95,11 +90,9 @@
             border-radius: 50%;
             border: 20px solid #222; /* Schwarzer Ring */
         }
-
         @keyframes spin {
             100% { transform: rotate(360deg); }
         }
-
         /* --- SCANNER --- */
         #reader {
             width: 100%;
@@ -110,49 +103,39 @@
     </style>
 </head>
 <body>
-
     <div id="screen-start" class="screen active">
         <h1>Opas Hitster Quiz<br><small>(Kirchenmusik Edition)</small></h1>
         <button class="btn" onclick="startScanner()">📷 QR-Code scannen</button>
     </div>
-
     <div id="screen-scan" class="screen">
         <h2>Bitte Code scannen</h2>
         <div id="reader"></div>
         <button class="btn btn-secondary" onclick="showScreen('screen-start'); stopScanner()">Abbrechen</button>
     </div>
-
     <div id="screen-player" class="screen">
         <h1>Hör genau hin...</h1>
         
         <div class="record-container" id="vinylRecord">
             <div class="record-label"></div>
         </div>
-
         <audio id="audioPlayer">
             <source id="audioSource" src="" type="audio/mpeg">
         </audio>
-
         <button id="playPauseBtn" class="btn" onclick="togglePlay()">▶️ Abspielen</button>
         <button class="btn btn-secondary" onclick="resetGame()">🔄 Neuen Code scannen</button>
     </div>
-
     <script>
         let html5QrcodeScanner;
         const audioPlayer = document.getElementById('audioPlayer');
         const vinylRecord = document.getElementById('vinylRecord');
         const playPauseBtn = document.getElementById('playPauseBtn');
-
         // --- HILFSFUNKTIONEN ---
-
         // Wechselt zwischen den Ansichten (Start / Scan / Player)
         function showScreen(screenId) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(screenId).classList.add('active');
         }
-
         // --- SCANNER LOGIK ---
-
         function startScanner() {
             showScreen('screen-scan');
             
@@ -164,13 +147,11 @@
             // Startet die Kamera (bevorzugt die Rückkamera "environment")
             html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess);
         }
-
         function stopScanner() {
             if (html5QrcodeScanner) {
                 html5QrcodeScanner.stop().catch(err => console.log(err));
             }
         }
-
         function onScanSuccess(decodedText, decodedResult) {
             // Scanner stoppen
             stopScanner();
@@ -184,56 +165,51 @@
                 try {
                     urlObj = new URL(decodedText);
                 } catch(e) {
-                    // Falls nur eine Nummer im QR Code steht (unwahrscheinlich bei dir)
+                    // Falls nur eine Nummer im QR Code steht
                     urlObj = new URL("https://dummy.com/?track=" + decodedText);
                 }
-
                 const params = new URLSearchParams(urlObj.search);
                 const trackId = params.get('track');
-
                 if (trackId) {
-                    loadSong(trackId);
+                    loadSong(trackId, true); // true = autoplay nach QR-Scan
                 } else {
                     alert("Kein Lied im QR-Code gefunden!");
                     showScreen('screen-start');
                 }
-
             } catch (error) {
                 alert("Fehler beim Lesen des Codes.");
                 showScreen('screen-start');
             }
         }
-
         // --- PLAYER LOGIK ---
-
-        function loadSong(trackId) {
-            // WICHTIG: Die Nullen entfernen (aus "002" wird "2")
-            const cleanId = parseInt(trackId, 10);
+        // FIX 1: Führende Nullen beibehalten (z.B. "004" statt "4")
+        // FIX 2: autoplay-Parameter steuert, ob sofort abgespielt wird
+        function loadSong(trackId, autoplay) {
+            // Track-ID immer auf 3 Stellen auffüllen (z.B. "4" → "004")
+            const paddedId = String(parseInt(trackId, 10)).padStart(3, '0');
             
             // Pfad setzen
             const source = document.getElementById('audioSource');
-            source.src = "mp3/" + cleanId + ".mp3";
+            source.src = "mp3/" + paddedId + ".mp3";
             
             audioPlayer.load();
             
             // Zum Player wechseln
             showScreen('screen-player');
             
-            // Automatisch starten (klappt bei manchen Handys, sonst Button drücken)
-            playMusic(); 
+            // Button-Text zurücksetzen
+            playPauseBtn.innerText = "▶️ Abspielen";
+            
+            // Nur automatisch starten, wenn es KEIN Direktaufruf ist (z.B. nach QR-Scan)
+            if (autoplay) {
+                audioPlayer.play().then(() => {
+                    updatePlayerUI();
+                }).catch(() => {
+                    // Autoplay wurde blockiert – Nutzer muss Button drücken
+                    updatePlayerUI();
+                });
+            }
         }
-
-        function playMusic() {
-            audioPlayer.play().then(() => {
-                isPlaying = true;
-                updatePlayerUI();
-            }).catch(e => {
-                // Autoplay wurde blockiert, Nutzer muss klicken
-                isPlaying = false;
-                updatePlayerUI();
-            });
-        }
-
         function togglePlay() {
             if (audioPlayer.paused) {
                 audioPlayer.play();
@@ -242,12 +218,14 @@
             }
             updatePlayerUI();
         }
-
         // UI Aktualisieren (Platte drehen & Button Text)
+        // FIX 3: isPlaying-Variable entfernt – wir nutzen nur audioPlayer.paused
         audioPlayer.onplay = updatePlayerUI;
         audioPlayer.onpause = updatePlayerUI;
-        audioPlayer.onended = () => { vinylRecord.style.animationPlayState = 'paused'; playPauseBtn.innerText = "▶️ Noch mal"; };
-
+        audioPlayer.onended = () => {
+            vinylRecord.style.animationPlayState = 'paused';
+            playPauseBtn.innerText = "▶️ Noch mal";
+        };
         function updatePlayerUI() {
             if (!audioPlayer.paused) {
                 // Musik läuft
@@ -259,21 +237,21 @@
                 playPauseBtn.innerText = "▶️ Weiter";
             }
         }
-
+        // FIX 4: URL bereinigen beim Reset
         function resetGame() {
             audioPlayer.pause();
             audioPlayer.currentTime = 0;
+            // URL-Parameter entfernen, damit beim Neuladen kein altes Lied startet
+            window.history.replaceState({}, document.title, window.location.pathname);
             showScreen('screen-start');
         }
-
         // --- DIREKTAUFRUF (FALLS JEMAND MIT NORMALER KAMERA SCANNT) ---
-        // Falls die Seite schon mit ?track=... geladen wurde, direkt abspielen
+        // FIX 2: Bei Direktaufruf nur vorbereiten, NICHT automatisch abspielen
         const urlParams = new URLSearchParams(window.location.search);
         const urlTrackId = urlParams.get('track');
-        if(urlTrackId) {
-            loadSong(urlTrackId);
+        if (urlTrackId) {
+            loadSong(urlTrackId, false); // false = kein Autoplay (iPhone-kompatibel)
         }
-
     </script>
 </body>
 </html>
