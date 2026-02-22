@@ -6,228 +6,356 @@
     <title>Opas Hitster Quiz</title>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background-color: #1a1a1a;
+            background-color: #000;
             color: white;
-            font-family: sans-serif;
+            font-family: 'Nunito', sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            margin: 0;
+            overflow: hidden;
             text-align: center;
-            overflow: hidden; /* Kein Scrollen */
         }
-
-        /* --- SCREEN STYLES --- */
         .screen {
-            display: none; /* Alle Screens erst mal ausblenden */
+            display: none;
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
             padding: 20px;
             box-sizing: border-box;
             flex-direction: column;
             align-items: center;
         }
-        
-        /* Der aktive Screen wird sichtbar */
-        .screen.active {
-            display: flex;
+        .screen.active { display: flex; }
+        /* --- HITSTER LOGO / VINYL --- */
+        .hitster-logo-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin-bottom: 30px;
         }
-
-        h1 {
-            font-weight: 300;
-            margin-bottom: 40px;
-            line-height: 1.4;
+        .rings-svg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            animation: spinRings 8s linear infinite;
+            animation-play-state: paused;
         }
-
-        /* --- BUTTONS --- */
-        .btn {
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            padding: 20px 30px;
-            font-size: 20px;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            margin: 10px;
-            width: 80%;
-            max-width: 300px;
+        .rings-svg.spinning {
+            animation-play-state: running;
         }
-        
-        .btn-secondary {
-            background-color: #555;
-            font-size: 16px;
-            padding: 15px 25px;
-        }
-
-        /* --- VINYL SCHALLPLATTE --- */
-        .record-container {
-            width: 250px;
-            height: 250px;
-            background: linear-gradient(135deg, #111, #333);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            margin-bottom: 40px;
-            border: 2px solid #444;
-            /* Animation */
-            animation: spin 4s linear infinite;
-            animation-play-state: paused; /* Startet gestoppt */
-        }
-
-        /* Das Label in der Mitte der Platte */
-        .record-label {
-            width: 80px;
-            height: 80px;
-            background-color: #e74c3c;
-            border-radius: 50%;
-            border: 20px solid #222; /* Schwarzer Ring */
-        }
-
-        @keyframes spin {
+        @keyframes spinRings {
             100% { transform: rotate(360deg); }
         }
-
+        .rings-svg circle {
+            fill: none;
+            stroke-linecap: round;
+        }
+        /* Ring colors */
+        .ring-orange { stroke: #ff6b1a; filter: drop-shadow(0 0 6px #ff6b1a); }
+        .ring-pink { stroke: #ff2d78; filter: drop-shadow(0 0 6px #ff2d78); }
+        .ring-yellow { stroke: #ffd600; filter: drop-shadow(0 0 6px #ffd600); }
+        .ring-cyan { stroke: #00e5ff; filter: drop-shadow(0 0 6px #00e5ff); }
+        .ring-magenta-outer { stroke: #ff2d78; filter: drop-shadow(0 0 6px #ff2d78); }
+        /* --- NEON TEXT OVERLAY --- */
+        .neon-text-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+        .neon-title {
+            font-family: 'Nunito', sans-serif;
+            font-weight: 900;
+            font-size: 42px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #fff;
+            text-shadow:
+                0 0 7px #ff3c8e,
+                0 0 15px #ff3c8e,
+                0 0 30px #ff3c8e,
+                0 0 50px #ff1a6e,
+                0 0 80px #ff1a6e;
+            line-height: 1;
+            white-space: nowrap;
+        }
+        .neon-subtitle {
+            font-family: 'Nunito', sans-serif;
+            font-weight: 700;
+            font-size: 11px;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            color: #ff9ec7;
+            text-shadow: 0 0 8px #ff3c8e, 0 0 20px #ff3c8e;
+            margin-top: 4px;
+        }
+        /* --- BUTTONS --- */
+        .btn {
+            background: linear-gradient(135deg, #ff2d78, #ff6b1a);
+            color: white;
+            border: none;
+            padding: 18px 30px;
+            font-size: 18px;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(255, 45, 120, 0.4), 0 5px 15px rgba(0,0,0,0.3);
+            margin: 10px;
+            width: 85%;
+            max-width: 300px;
+            letter-spacing: 1px;
+            transition: transform 0.15s, box-shadow 0.15s;
+            font-family: 'Nunito', sans-serif;
+        }
+        .btn:active {
+            transform: scale(0.97);
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.08);
+            border: 2px solid rgba(255,255,255,0.15);
+            box-shadow: none;
+            font-size: 15px;
+            padding: 14px 25px;
+        }
+        .btn-secondary:active {
+            background: rgba(255,255,255,0.15);
+        }
+        /* --- PAGE TITLE (start screen) --- */
+        .page-title {
+            font-weight: 300;
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #aaa;
+            letter-spacing: 2px;
+        }
         /* --- SCANNER --- */
         #reader {
             width: 100%;
-            border-radius: 10px;
+            border-radius: 12px;
             overflow: hidden;
-            border: 2px solid #555;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+        .scan-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #ccc;
+        }
+        /* --- PLAYER SCREEN --- */
+        .player-hint {
+            font-size: 16px;
+            color: #888;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+        /* --- FLOATING PARTICLES (decorative) --- */
+        .particles {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.15;
+            animation: floatUp linear infinite;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            10% { opacity: 0.15; }
+            90% { opacity: 0.15; }
+            100% { transform: translateY(-10vh) scale(1); opacity: 0; }
         }
     </style>
 </head>
 <body>
-
+    <!-- Decorative background particles -->
+    <div class="particles" id="particles"></div>
+    <!-- ======= START SCREEN ======= -->
     <div id="screen-start" class="screen active">
-        <h1>Opas Hitster Quiz</h1>
+        <div class="hitster-logo-container">
+            <svg class="rings-svg" viewBox="0 0 300 300">
+                <!-- RING 1 – innermost – Orange -->
+                <circle class="ring-orange" cx="150" cy="150" r="55" stroke-width="5"
+                    stroke-dasharray="50 40 60 200" />
+                <circle class="ring-orange" cx="150" cy="150" r="55" stroke-width="5"
+                    stroke-dasharray="30 80 40 200" transform="rotate(180 150 150)" />
+                <!-- RING 2 – Pink/Magenta -->
+                <circle class="ring-pink" cx="150" cy="150" r="75" stroke-width="5"
+                    stroke-dasharray="70 50 80 270" />
+                <circle class="ring-pink" cx="150" cy="150" r="75" stroke-width="5"
+                    stroke-dasharray="90 60 50 270" transform="rotate(200 150 150)" />
+                <!-- RING 3 – Yellow -->
+                <circle class="ring-yellow" cx="150" cy="150" r="98" stroke-width="5.5"
+                    stroke-dasharray="120 50 100 350" />
+                <circle class="ring-yellow" cx="150" cy="150" r="98" stroke-width="5.5"
+                    stroke-dasharray="100 70 80 370" transform="rotate(190 150 150)" />
+                <!-- RING 4 outer – Cyan + Magenta -->
+                <circle class="ring-cyan" cx="150" cy="150" r="120" stroke-width="5"
+                    stroke-dasharray="80 70 90 520" />
+                <circle class="ring-cyan" cx="150" cy="150" r="120" stroke-width="5"
+                    stroke-dasharray="70 90 60 540" transform="rotate(180 150 150)" />
+                <circle class="ring-magenta-outer" cx="150" cy="150" r="120" stroke-width="5"
+                    stroke-dasharray="100 60 80 520" transform="rotate(90 150 150)" />
+                <circle class="ring-magenta-outer" cx="150" cy="150" r="120" stroke-width="5"
+                    stroke-dasharray="60 80 70 550" transform="rotate(270 150 150)" />
+                <!-- RING 5 outermost accent -->
+                <circle class="ring-yellow" cx="150" cy="150" r="138" stroke-width="4"
+                    stroke-dasharray="40 100 60 670" />
+                <circle class="ring-cyan" cx="150" cy="150" r="138" stroke-width="4"
+                    stroke-dasharray="50 90 40 690" transform="rotate(120 150 150)" />
+                <circle class="ring-magenta-outer" cx="150" cy="150" r="138" stroke-width="4"
+                    stroke-dasharray="70 80 50 670" transform="rotate(240 150 150)" />
+            </svg>
+            <div class="neon-text-overlay">
+                <div class="neon-title">OPASTER</div>
+                <div class="neon-subtitle">Kirchenmusik</div>
+            </div>
+        </div>
         <button class="btn" onclick="startScanner()">📷 QR-Code scannen</button>
     </div>
-
+    <!-- ======= SCAN SCREEN ======= -->
     <div id="screen-scan" class="screen">
-        <h2>Bitte Code scannen</h2>
+        <p class="scan-title">📱 Bitte QR-Code scannen</p>
         <div id="reader"></div>
-        <button class="btn btn-secondary" onclick="showScreen('screen-start'); stopScanner()">Abbrechen</button>
+        <button class="btn btn-secondary" onclick="showScreen('screen-start'); stopScanner()" style="margin-top:15px;">Abbrechen</button>
     </div>
-
+    <!-- ======= PLAYER SCREEN ======= -->
     <div id="screen-player" class="screen">
-        <h1>Hör genau hin...</h1>
-        
-        <div class="record-container" id="vinylRecord">
-            <div class="record-label"></div>
+        <p class="player-hint">Hör genau hin...</p>
+        <div class="hitster-logo-container" id="playerLogoContainer">
+            <svg class="rings-svg" id="playerRings" viewBox="0 0 300 300">
+                <!-- RING 1 – innermost – Orange -->
+                <circle class="ring-orange" cx="150" cy="150" r="55" stroke-width="5"
+                    stroke-dasharray="50 40 60 200" />
+                <circle class="ring-orange" cx="150" cy="150" r="55" stroke-width="5"
+                    stroke-dasharray="30 80 40 200" transform="rotate(180 150 150)" />
+                <!-- RING 2 – Pink/Magenta -->
+                <circle class="ring-pink" cx="150" cy="150" r="75" stroke-width="5"
+                    stroke-dasharray="70 50 80 270" />
+                <circle class="ring-pink" cx="150" cy="150" r="75" stroke-width="5"
+                    stroke-dasharray="90 60 50 270" transform="rotate(200 150 150)" />
+                <!-- RING 3 – Yellow -->
+                <circle class="ring-yellow" cx="150" cy="150" r="98" stroke-width="5.5"
+                    stroke-dasharray="120 50 100 350" />
+                <circle class="ring-yellow" cx="150" cy="150" r="98" stroke-width="5.5"
+                    stroke-dasharray="100 70 80 370" transform="rotate(190 150 150)" />
+                <!-- RING 4 outer – Cyan + Magenta -->
+                <circle class="ring-cyan" cx="150" cy="150" r="120" stroke-width="5"
+                    stroke-dasharray="80 70 90 520" />
+                <circle class="ring-cyan" cx="150" cy="150" r="120" stroke-width="5"
+                    stroke-dasharray="70 90 60 540" transform="rotate(180 150 150)" />
+                <circle class="ring-magenta-outer" cx="150" cy="150" r="120" stroke-width="5"
+                    stroke-dasharray="100 60 80 520" transform="rotate(90 150 150)" />
+                <circle class="ring-magenta-outer" cx="150" cy="150" r="120" stroke-width="5"
+                    stroke-dasharray="60 80 70 550" transform="rotate(270 150 150)" />
+                <!-- RING 5 outermost accent -->
+                <circle class="ring-yellow" cx="150" cy="150" r="138" stroke-width="4"
+                    stroke-dasharray="40 100 60 670" />
+                <circle class="ring-cyan" cx="150" cy="150" r="138" stroke-width="4"
+                    stroke-dasharray="50 90 40 690" transform="rotate(120 150 150)" />
+                <circle class="ring-magenta-outer" cx="150" cy="150" r="138" stroke-width="4"
+                    stroke-dasharray="70 80 50 670" transform="rotate(240 150 150)" />
+            </svg>
+            <div class="neon-text-overlay">
+                <div class="neon-title">OPASTER</div>
+                <div class="neon-subtitle">Kirchenmusik</div>
+            </div>
         </div>
-
         <audio id="audioPlayer">
             <source id="audioSource" src="" type="audio/mpeg">
         </audio>
-
         <button id="playPauseBtn" class="btn" onclick="togglePlay()">▶️ Abspielen</button>
         <button class="btn btn-secondary" onclick="resetGame()">🔄 Neuen Code scannen</button>
     </div>
-
     <script>
         let html5QrcodeScanner;
         const audioPlayer = document.getElementById('audioPlayer');
-        const vinylRecord = document.getElementById('vinylRecord');
+        const playerRings = document.getElementById('playerRings');
         const playPauseBtn = document.getElementById('playPauseBtn');
-
-        // --- HILFSFUNKTIONEN ---
-
-        // Wechselt zwischen den Ansichten (Start / Scan / Player)
+        // --- PARTICLES ---
+        (function createParticles() {
+            const container = document.getElementById('particles');
+            const colors = ['#ff2d78', '#ff6b1a', '#ffd600', '#00e5ff'];
+            for (let i = 0; i < 20; i++) {
+                const p = document.createElement('div');
+                p.classList.add('particle');
+                const size = Math.random() * 6 + 2;
+                p.style.width = size + 'px';
+                p.style.height = size + 'px';
+                p.style.left = Math.random() * 100 + '%';
+                p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                p.style.animationDuration = (Math.random() * 12 + 8) + 's';
+                p.style.animationDelay = (Math.random() * 10) + 's';
+                container.appendChild(p);
+            }
+        })();
+        // --- SCREEN MANAGEMENT ---
         function showScreen(screenId) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(screenId).classList.add('active');
         }
-
-        // --- SCANNER LOGIK ---
-
+        // --- SCANNER ---
         function startScanner() {
             showScreen('screen-scan');
-            
             html5QrcodeScanner = new Html5Qrcode("reader");
-            
-            // Kamera Einstellungen
             const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-            
-            // Startet die Kamera (bevorzugt die Rückkamera "environment")
             html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess);
         }
-
         function stopScanner() {
             if (html5QrcodeScanner) {
                 html5QrcodeScanner.stop().catch(err => console.log(err));
             }
         }
-
-        function onScanSuccess(decodedText, decodedResult) {
-            // Scanner stoppen
+        function onScanSuccess(decodedText) {
             stopScanner();
-            
-            // URL analysieren (wir suchen nach "track=...")
             console.log("Gescannter Code:", decodedText);
-            
             try {
-                // Wir tun so, als wäre der gescannte Text eine URL
                 let urlObj;
                 try {
                     urlObj = new URL(decodedText);
                 } catch(e) {
-                    // Falls nur eine Nummer im QR Code steht
                     urlObj = new URL("https://dummy.com/?track=" + decodedText);
                 }
-
                 const params = new URLSearchParams(urlObj.search);
                 const trackId = params.get('track');
-
                 if (trackId) {
-                    loadSong(trackId, true); // true = autoplay nach QR-Scan
+                    loadSong(trackId, true);
                 } else {
                     alert("Kein Lied im QR-Code gefunden!");
                     showScreen('screen-start');
                 }
-
             } catch (error) {
                 alert("Fehler beim Lesen des Codes.");
                 showScreen('screen-start');
             }
         }
-
-        // --- PLAYER LOGIK ---
-
-        // Führende Nullen beibehalten (z.B. "004" statt "4")
-        // autoplay-Parameter steuert, ob sofort abgespielt wird
+        // --- PLAYER ---
         function loadSong(trackId, autoplay) {
-            // Track-ID immer auf 3 Stellen auffüllen (z.B. "4" → "004")
             const paddedId = String(parseInt(trackId, 10)).padStart(3, '0');
-            
-            // Pfad setzen
             const source = document.getElementById('audioSource');
             source.src = "mp3/" + paddedId + ".mp3";
-            
             audioPlayer.load();
-            
-            // Zum Player wechseln
             showScreen('screen-player');
-            
-            // Button-Text zurücksetzen
             playPauseBtn.innerText = "▶️ Abspielen";
-            
-            // Nur automatisch starten, wenn es KEIN Direktaufruf ist (z.B. nach QR-Scan)
+            playerRings.classList.remove('spinning');
             if (autoplay) {
                 audioPlayer.play().then(() => {
                     updatePlayerUI();
                 }).catch(() => {
-                    // Autoplay wurde blockiert – Nutzer muss Button drücken
                     updatePlayerUI();
                 });
             }
         }
-
         function togglePlay() {
             if (audioPlayer.paused) {
                 audioPlayer.play();
@@ -236,44 +364,34 @@
             }
             updatePlayerUI();
         }
-
-        // UI Aktualisieren (Platte drehen & Button Text)
         audioPlayer.onplay = updatePlayerUI;
         audioPlayer.onpause = updatePlayerUI;
         audioPlayer.onended = () => {
-            vinylRecord.style.animationPlayState = 'paused';
+            playerRings.classList.remove('spinning');
             playPauseBtn.innerText = "▶️ Noch mal";
         };
-
         function updatePlayerUI() {
             if (!audioPlayer.paused) {
-                // Musik läuft
-                vinylRecord.style.animationPlayState = 'running';
+                playerRings.classList.add('spinning');
                 playPauseBtn.innerText = "⏸ Pause";
             } else {
-                // Musik pausiert
-                vinylRecord.style.animationPlayState = 'paused';
+                playerRings.classList.remove('spinning');
                 playPauseBtn.innerText = "▶️ Weiter";
             }
         }
-
-        // URL bereinigen beim Reset
         function resetGame() {
             audioPlayer.pause();
             audioPlayer.currentTime = 0;
-            // URL-Parameter entfernen, damit beim Neuladen kein altes Lied startet
+            playerRings.classList.remove('spinning');
             window.history.replaceState({}, document.title, window.location.pathname);
             showScreen('screen-start');
         }
-
-        // --- DIREKTAUFRUF (FALLS JEMAND MIT NORMALER KAMERA SCANNT) ---
-        // Bei Direktaufruf nur vorbereiten, NICHT automatisch abspielen
+        // --- DIRECT URL ACCESS ---
         const urlParams = new URLSearchParams(window.location.search);
         const urlTrackId = urlParams.get('track');
         if (urlTrackId) {
-            loadSong(urlTrackId, false); // false = kein Autoplay (iPhone-kompatibel)
+            loadSong(urlTrackId, false);
         }
-
     </script>
 </body>
 </html>
